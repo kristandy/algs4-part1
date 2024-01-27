@@ -12,7 +12,8 @@ public class Percolation {
     private int sinkBottom;
     private int matrixSize;
     private int openSiteCount;
-    private final WeightedQuickUnionUF quf;
+    private final WeightedQuickUnionUF percolation;
+    private final WeightedQuickUnionUF full;
 
     // creates n-by-n grid, with all sites initially blocked
     public Percolation(int n) {
@@ -21,7 +22,8 @@ public class Percolation {
         }
         matrixSize = n;
         sinkBottom = matrixSize * matrixSize + 1;
-        quf = new WeightedQuickUnionUF(matrixSize * matrixSize + 2);
+        percolation = new WeightedQuickUnionUF(matrixSize * matrixSize + 2);
+        full = new WeightedQuickUnionUF(matrixSize * matrixSize + 1);
         matrix = new boolean[matrixSize][matrixSize];
         sourceTop = 0;
         openSiteCount = 0;
@@ -36,32 +38,37 @@ public class Percolation {
             }
 
             if (row == 1) {
-                quf.union(convertArray(row, col), sourceTop);
+                percolation.union(convertArray(row, col), sourceTop);
+                full.union(convertArray(row, col), sourceTop);
             }
 
             if (row == matrixSize) {
-                quf.union(convertArray(row, col), sinkBottom);
+                percolation.union(convertArray(row, col), sinkBottom);
             }
 
             if (row > 1 && isOpen(row - 1, col)) {
-                quf.union(convertArray(row, col), convertArray(row - 1, col));
+                percolation.union(convertArray(row, col), convertArray(row - 1, col));
+                full.union(convertArray(row, col), convertArray(row - 1, col));
             }
 
             if (row < matrixSize && isOpen(row + 1, col)) {
-                quf.union(convertArray(row, col), convertArray(row + 1, col));
+                percolation.union(convertArray(row, col), convertArray(row + 1, col));
+                full.union(convertArray(row, col), convertArray(row + 1, col));
             }
 
             if (col > 1 && isOpen(row, col - 1)) {
-                quf.union(convertArray(row, col), convertArray(row, col - 1));
+                percolation.union(convertArray(row, col), convertArray(row, col - 1));
+                full.union(convertArray(row, col), convertArray(row, col - 1));
             }
 
             if (col < matrixSize && isOpen(row, col + 1)) {
-                quf.union(convertArray(row, col), convertArray(row, col + 1));
+                percolation.union(convertArray(row, col), convertArray(row, col + 1));
+                full.union(convertArray(row, col), convertArray(row, col + 1));
             }
         }
-        throw new IllegalArgumentException();
     }
 
+    // convert 2D array to 1D
     private int convertArray(int row, int col) {
         return matrixSize * (row - 1) + col;
     }
@@ -69,7 +76,6 @@ public class Percolation {
     // is the site (row, col) open?
     public boolean isOpen(int row, int col) {
         if (checkIndex(row, col)) {
-            checkIndex(row, col);
             return matrix[row - 1][col - 1];
         }
         throw new IllegalArgumentException();
@@ -78,7 +84,7 @@ public class Percolation {
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
         if (checkIndex(row, col)) {
-            return quf.connected(sourceTop, convertArray(row, col));
+            return full.find(sourceTop) == full.find(convertArray(row, col));
         }
         throw new IllegalArgumentException();
     }
@@ -90,7 +96,7 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return quf.connected(sourceTop, sinkBottom);
+        return percolation.find(sourceTop) == percolation.find(sinkBottom);
     }
 
     private boolean checkIndex(int row, int col) {
