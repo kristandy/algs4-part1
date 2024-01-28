@@ -66,6 +66,9 @@ public class Percolation {
                 full.union(convertArray(row, col), convertArray(row, col + 1));
             }
         }
+        else {
+            throw new IllegalArgumentException();
+        }
     }
 
     // convert 2D array to 1D
